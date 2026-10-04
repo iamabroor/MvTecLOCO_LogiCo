@@ -1,0 +1,19 @@
+category,metric,paper_image_AUROC,replication_best_ckpt,replication_epoch200,best_minus_paper,epoch200_minus_paper,best_minus_epoch200,SALAD_replication_seed42,LogiCo_best_minus_SALAD
+breakfast_box,logical,,99.02,99.02,,,0.0,89.72,9.3
+breakfast_box,structural,,98.7,98.7,,,0.0,82.46,16.24
+breakfast_box,mean,,98.86,98.86,,,0.0,86.09,12.77
+juice_bottle,logical,,99.82,99.51,,,0.31,99.64,0.18
+juice_bottle,structural,,97.19,95.87,,,1.32,98.96,-1.77
+juice_bottle,mean,,98.51,97.69,,,0.82,99.3,-0.79
+pushpins,logical,,99.39,98.88,,,0.51,99.92,-0.53
+pushpins,structural,,91.58,87.82,,,3.76,97.85,-6.27
+pushpins,mean,,95.49,93.35,,,2.14,98.89,-3.4
+screw_bag,logical,,88.21,78.25,,,9.96,82.27,5.94
+screw_bag,structural,,91.51,92.34,,,-0.83,94.81,-3.3
+screw_bag,mean,,89.86,85.29,,,4.57,88.54,1.32
+splicing_connectors,logical,,92.29,90.94,,,1.35,94.9,-2.61
+splicing_connectors,structural,,98.86,97.46,,,1.4,97.45,1.41
+splicing_connectors,mean,,95.58,94.2,,,1.38,96.18,-0.6
+AVERAGE (5 categories),logical,96.5,95.75,93.32,-0.75,-3.18,2.43,93.29,2.46
+AVERAGE (5 categories),structural,96.0,95.57,94.44,-0.43,-1.56,1.13,94.31,1.26
+AVERAGE (5 categories),mean,96.3,95.66,93.88,-0.64,-2.42,1.78,93.8,1.86

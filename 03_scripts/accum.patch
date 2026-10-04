@@ -1,0 +1,76 @@
+diff --git a/train_logico.py b/train_logico.py
+index e279e4b..2b1b893 100644
+--- a/train_logico.py
++++ b/train_logico.py
+@@ -77,9 +77,13 @@ def main(args):
+     validation_data.extract_feats(encoder, config.encoder_target_layers, config.encoder_feat_stride, config.encoder_feat_dim,
+                             use_aggregate_features = config.use_aggregate_features, device=device)
+ 
+-    train_dataloader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=4, drop_last = True)
+-    test_dataloader = torch.utils.data.DataLoader(test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
+-    validation_dataloader = torch.utils.data.DataLoader(validation_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
++    # [replication patch] gradient accumulation: micro-batches of batch_size/accum_steps, effective batch = batch_size
++    assert args.batch_size % args.accum_steps == 0, 'batch_size must be divisible by accum_steps'
++    micro_bs = args.batch_size // args.accum_steps
++    train_dataloader = torch.utils.data.DataLoader(train_data, batch_size=micro_bs, shuffle=True, num_workers=4, drop_last = True)
++    test_dataloader = torch.utils.data.DataLoader(test_data, batch_size=micro_bs, shuffle=False, num_workers=4)
++    validation_dataloader = torch.utils.data.DataLoader(validation_data, batch_size=micro_bs, shuffle=False, num_workers=4)
++    steps_per_epoch = len(train_dataloader) // args.accum_steps
+ 
+     model = LogiCo(**config.model,
+                    encoder=encoder,
+@@ -88,7 +92,7 @@ def main(args):
+                    device = device)
+ 
+     optimizer = torch.optim.AdamW(model.get_trainable_params(), lr = 2e-4, weight_decay = 1e-4)
+-    lr_scheduler = WarmCosineScheduler(optimizer, base_value=2e-4, final_value=1e-4, total_iters = config.total_epochs * len(train_dataloader), warmup_iters=100)
++    lr_scheduler = WarmCosineScheduler(optimizer, base_value=2e-4, final_value=1e-4, total_iters = config.total_epochs * steps_per_epoch, warmup_iters=100)
+     synthesizer = CombSynthesizer(**config.synthesizer, num_cls=len(config.comp_names))
+ 
+     best_metrics = None
+@@ -101,7 +105,10 @@ def main(args):
+         str_rocen_loss_list = []
+         discriminator_loss_list = []
+ 
+-        for data in train_dataloader:
++        optimizer.zero_grad()
++        for step_idx, data in enumerate(train_dataloader):
++            if step_idx >= steps_per_epoch * args.accum_steps:
++                break  # drop leftover micro-batches, same number of optimizer steps as batch_size without accumulation
+ 
+             anomaly_seg_map, masks = synthesizer(data['seg_map'])
+             data['anomaly_seg_map'] = anomaly_seg_map
+@@ -109,17 +116,19 @@ def main(args):
+             log_recon_loss, str_recon_loss, discriminator_loss = model.get_losses(data)
+             loss = log_recon_loss + str_recon_loss + discriminator_loss
+ 
+-            optimizer.zero_grad()
+-            loss.backward()
+-            nn.utils.clip_grad_norm(model.CRN.parameters(), max_norm=0.1)
+-            nn.utils.clip_grad_norm(model.SRN.parameters(), max_norm=0.1)
+-            optimizer.step()
++            (loss / args.accum_steps).backward()
+ 
+             loss_list.append(loss.item())
+             log_rocen_loss_list.append(log_recon_loss.item())
+             str_rocen_loss_list.append(str_recon_loss.item())
+             discriminator_loss_list.append(discriminator_loss.item())
+-            lr_scheduler.step()
++
++            if (step_idx + 1) % args.accum_steps == 0:
++                nn.utils.clip_grad_norm(model.CRN.parameters(), max_norm=0.1)
++                nn.utils.clip_grad_norm(model.SRN.parameters(), max_norm=0.1)
++                optimizer.step()
++                optimizer.zero_grad()
++                lr_scheduler.step()
+ 
+         print_fn('epoch [{}/{}], loss: {:.4f}, log-recon-loss: {:.4f}, str-recon-loss: {:.4f}, discriminator-loss: {:.4f}'.format(epoch + 1, config.total_epochs,
+             np.mean(loss_list), np.mean(log_rocen_loss_list), np.mean(str_rocen_loss_list), np.mean(discriminator_loss_list)))
+@@ -201,6 +210,7 @@ if __name__ == '__main__':
+     parser.add_argument('--save_dir', type=str, default='saved_results')
+     parser.add_argument('--batch_size', type=int, default = 14)
+     parser.add_argument('--seed', type=int, default = 42)
++    parser.add_argument('--accum_steps', type=int, default = 1, help='[replication patch] gradient accumulation steps')
+     args = parser.parse_args()
+     logger = get_logger(os.path.join(args.save_dir, args.dataset, args.category))
+     print_fn = logger.info

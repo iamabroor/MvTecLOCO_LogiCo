@@ -1,0 +1,1 @@
+(paste output of nvidia-smi from the AWS workspace here)

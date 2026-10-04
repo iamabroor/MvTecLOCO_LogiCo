@@ -1,0 +1,8 @@
+# never commit these
+*.pkl
+*.pth
+*.pem
+saved_results/
+data/
+ckpt/
+__pycache__/
