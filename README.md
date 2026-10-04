@@ -31,6 +31,26 @@ checkpoint-selection-free number. Details and per-category results: `05_results/
 | `06_environment/` | Requirements and AWS setup notes |
 | `07_replication_notes/` | Deviations from the paper and the problems I hit |
 
+## Results & Visualisations
+
+### Performance Figures
+<p align="center">
+  <img src="05_results/figures/fig1_overall_vs_paper.png" width="48%">
+  <img src="05_results/figures/fig2_per_category_logico_vs_salad.png" width="48%">
+  <img src="05_results/figures/fig3_checkpoint_selection_effect.png" width="80%">
+</p>
+
+### Qualitative Anomaly Detection
+<p align="center">
+  <img src="05_results/Output/00_summary_all_steps.png" width="80%">
+</p>
+
+<p align="center">
+  <img src="05_results/Output/qualitative_logical_anomalies_1per_category.png" width="48%">
+  <img src="05_results/Output/qualitative_logical_anomalies_3per_category.png" width="48%">
+  <img src="05_results/Output/qualitative_structural_anomalies_3per_category.png" width="80%">
+</p>
+
 ## How to reproduce (short version)
 
 1. Follow `06_environment/environment_setup.md`.
